@@ -17,7 +17,7 @@ import java.util.Scanner;
  *
  * @author Admin
  */
-public class Client {
+public class Client { 
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws UnknownHostException {
 

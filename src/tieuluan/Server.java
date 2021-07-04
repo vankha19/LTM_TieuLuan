@@ -100,7 +100,7 @@ public class Server {
 			FileOutputStream outputStream = new FileOutputStream("phanso.dat");
 			outputStream.write(byteEncrypted);
 			outputStream.close();
-
+ 
 			// Decryption
 			cipher.init(Cipher.DECRYPT_MODE, skeySpec);
 			byte[] byteDecrypted = cipher.doFinal(byteEncrypted);
