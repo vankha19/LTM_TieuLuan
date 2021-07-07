@@ -37,10 +37,11 @@ public class PhanSo {
 	public void setMauSo(int MauSo) {
 		this.MauSo = MauSo;
 	}
-
+ 
 	@Override
 	public String toString() {
 		return TuSo + "/" + MauSo;
+		
 	}
 
 }

@@ -55,9 +55,18 @@ public class Server {
 
 			// Convert byte array to string
 			String dataString = new String(recData.getData(), 0, recData.getLength()).trim();
+                        
+                        // Receive Key from client
+			byte recKey[] = new byte[256];
+			DatagramPacket recKeyData = new DatagramPacket(recKey, recKey.length);
+			server.receive(recKeyData);
+
+			// Convert byte array to string
+			String dataKeyString = new String(recKeyData.getData(), 0, recKeyData.getLength()).trim();
 
 			// Convert string to PhanSo class object
 			String[] a = dataString.substring(1, dataString.length() - 1).split(", ");
+                        
 			ArrayList<PhanSo> psArray = new ArrayList<>();
 			for (int i = 0; i < a.length; i++) {
 				String[] p = a[i].split("/");
@@ -67,6 +76,7 @@ public class Server {
 					psArray.add(ps);
 				}
 			}
+                       
 
 			// Handle PhanSo has 'MauSo' is prime
 			System.out.println("Phan so co mau la thua so ngyen to:");
@@ -76,11 +86,11 @@ public class Server {
 
 			// Send PhanSo has 'MauSo' is prime to client
 			DatagramPacket sendPacket = new DatagramPacket(psArray.toString().getBytes(), psArray.toString().length(),
-					recData.getAddress(), recData.getPort());
+			recData.getAddress(), recData.getPort());
 			server.send(sendPacket);
 
 			// Generate Specific Key
-			String SECRET_KEY = "12345678";
+			String SECRET_KEY = dataKeyString;
 			SecretKeySpec skeySpec = new SecretKeySpec(SECRET_KEY.getBytes(), "DES");
 
 			/*
@@ -98,9 +108,9 @@ public class Server {
 
 			// Save to file
 			FileOutputStream outputStream = new FileOutputStream("phanso.dat");
-			outputStream.write(byteEncrypted);
+			outputStream.write(recByte);
 			outputStream.close();
-
+ 
 			// Decryption
 			cipher.init(Cipher.DECRYPT_MODE, skeySpec);
 			byte[] byteDecrypted = cipher.doFinal(byteEncrypted);
