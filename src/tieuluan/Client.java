@@ -40,7 +40,6 @@ public class Client {
 			System.out.println("connect fail");
 			return;
 		}
-
 		
 		try {
 			InetAddress serverAddress = InetAddress.getByName(address);

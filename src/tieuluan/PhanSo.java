@@ -41,7 +41,6 @@ public class PhanSo {
 	@Override
 	public String toString() {
 		return TuSo + "/" + MauSo;
-		
 	}
 
 }

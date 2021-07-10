@@ -5,11 +5,18 @@
  */
 package tieuluan;
 
+import java.io.BufferedWriter;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Base64;
 
@@ -37,6 +44,19 @@ public class Server {
 		}
 		return true;
 	}
+	
+	public static void saveFile(String fileName, String data) throws IOException
+		{
+		    final Path path = Paths.get(fileName);
+
+		    try (
+		        final BufferedWriter writer = Files.newBufferedWriter(path,
+		            StandardCharsets.UTF_8, StandardOpenOption.CREATE);
+		    ) {
+		        writer.write(data);
+		        writer.flush();
+		    }
+		}
 
 	public static void main(String[] args) throws UnknownHostException {
 		InetAddress address = InetAddress.getByName("localhost");
@@ -46,18 +66,19 @@ public class Server {
 
 		try {
 			server = new DatagramSocket(port, address);
-			System.out.println("Server ready for connect");
+			System.out.println("Server ready for connect:");
+			System.out.println("Address: " + address + "\nPort: " + port);
 
 			// Receive data from client
-			byte recByte[] = new byte[256];
-			DatagramPacket recData = new DatagramPacket(recByte, recByte.length);
-			server.receive(recData);
+			byte recPSByte[] = new byte[256];
+			DatagramPacket recPSData = new DatagramPacket(recPSByte, recPSByte.length);
+			server.receive(recPSData);
 
 			// Convert byte array to string
-			String dataString = new String(recData.getData(), 0, recData.getLength()).trim();
-                        
-                        // Receive Key from client
-			byte recKey[] = new byte[256];
+			String dataString = new String(recPSData.getData(), 0, recPSData.getLength()).trim();
+
+			// Receive Key from client
+			byte recKey[] = new byte[8];
 			DatagramPacket recKeyData = new DatagramPacket(recKey, recKey.length);
 			server.receive(recKeyData);
 
@@ -66,7 +87,7 @@ public class Server {
 
 			// Convert string to PhanSo class object
 			String[] a = dataString.substring(1, dataString.length() - 1).split(", ");
-                        
+
 			ArrayList<PhanSo> psArray = new ArrayList<>();
 			for (int i = 0; i < a.length; i++) {
 				String[] p = a[i].split("/");
@@ -76,47 +97,41 @@ public class Server {
 					psArray.add(ps);
 				}
 			}
-                       
 
 			// Handle PhanSo has 'MauSo' is prime
-			System.out.println("Phan so co mau la thua so ngyen to:");
+			System.out.println("Phan so co mau la thua so nguyen to:");
 			for (PhanSo phanSo : psArray) {
 				System.out.println(phanSo.toString());
 			}
 
 			// Send PhanSo has 'MauSo' is prime to client
 			DatagramPacket sendPacket = new DatagramPacket(psArray.toString().getBytes(), psArray.toString().length(),
-			recData.getAddress(), recData.getPort());
+					recPSData.getAddress(), recPSData.getPort());
 			server.send(sendPacket);
 
 			// Generate Specific Key
-			String SECRET_KEY = dataKeyString;
-			SecretKeySpec skeySpec = new SecretKeySpec(SECRET_KEY.getBytes(), "DES");
+			SecretKeySpec skeySpec = new SecretKeySpec(recKey, "DES");
 
 			/*
-			 * Note: DES = Data Encryption Standard. 
-			 * ECB = Electronic Codebook mode.
+			 * Note: DES = Data Encryption Standard. ECB = Electronic Codebook mode.
 			 * PKCS5Padding = PKCS #5-style padding.
 			 */
 			Cipher cipher = Cipher.getInstance("DES/ECB/PKCS5PADDING");
 			cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
-			
 			// Encryption
-			byte[] byteEncrypted = cipher.doFinal(dataString.getBytes());
+			byte[] byteEncrypted = cipher.doFinal(recPSByte);
 			String encrypted = Base64.getEncoder().encodeToString(byteEncrypted);
 			System.out.println("encrypted text: " + encrypted);
-
 			// Save to file
 			FileOutputStream outputStream = new FileOutputStream("phanso.dat");
-			outputStream.write(recByte);
+			outputStream.write(byteEncrypted);
 			outputStream.close();
- 
+
 			// Decryption
 			cipher.init(Cipher.DECRYPT_MODE, skeySpec);
 			byte[] byteDecrypted = cipher.doFinal(byteEncrypted);
 			String decrypted = new String(byteDecrypted);
 			System.out.println("decrypted text: " + decrypted);
-
 		} catch (Exception e) {
 			System.err.print(e);
 		} finally {
